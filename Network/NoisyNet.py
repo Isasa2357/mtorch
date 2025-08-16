@@ -10,19 +10,23 @@ from torch import nn
 from typing import Tuple, cast
 import inspect
 
-from mutil_RL.mutil_torch import factory_LinearReLU_Sequential
-from mtorch.NoisyLinear import factory_NoisyLiearReLU_Sequential, NoisyLinear
-from DQN.Qnet import BaseQnetwork
+from mtorch.layer.NoisyLinear import factory_NoisyLiearReLU_Sequential, NoisyLinear
+from mtorch.Network.Qnet import BaseQnetwork
 
 class NoisyNetInterface(BaseQnetwork):
-    def __init__(self):
+    def __init__(self, do_noiseReset: bool=True):
         super().__init__()
+        self._do_noiseReset = do_noiseReset
 
     def noise_reset(self):
         raise NotImplementedError(f'{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}は未実装') # type: ignore
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError(f'{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}は未実装') # type: ignore
+    
+    def callback_everyUpdate(self):
+        if self._do_noiseReset:
+            self.noise_reset()
 
 
 class NoisyNet(NoisyNetInterface):
@@ -30,8 +34,8 @@ class NoisyNet(NoisyNetInterface):
     Noisy Net
     '''
 
-    def __init__(self, in_chnls: int, hdn_chnls: Tuple[int, ...], out_chnls: int, sigma_init: float=0.5):
-        super().__init__()
+    def __init__(self, in_chnls: int, hdn_chnls: Tuple[int, ...], out_chnls: int, sigma_init: float=0.5, do_noiseReset: bool=True):
+        super().__init__(do_noiseReset)
         
         self._network = factory_NoisyLiearReLU_Sequential(in_chnls, hdn_chnls, out_chnls, tuple([sigma_init] * (len(hdn_chnls) + 1)))
     
@@ -45,7 +49,6 @@ class NoisyNet(NoisyNetInterface):
                 noisy_layer.reset_noise()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        
         return self._network.forward(x)
 
 class DuelingNoisyNet(NoisyNetInterface):
@@ -53,8 +56,8 @@ class DuelingNoisyNet(NoisyNetInterface):
     Dueling Noisy Net
     '''
 
-    def __init__(self, in_chnls: int, hdn_chnls: Tuple[int, ...], out_chnls: int, sigma_init: float=0.5):
-        super().__init__()
+    def __init__(self, in_chnls: int, hdn_chnls: Tuple[int, ...], out_chnls: int, sigma_init: float=0.5, do_noiseReset: bool=True):
+        super().__init__(do_noiseReset)
 
         # duelingNet構成用にhdnchnlを修正
         hdn_chnls_4factory = hdn_chnls[0:len(hdn_chnls) - 1]

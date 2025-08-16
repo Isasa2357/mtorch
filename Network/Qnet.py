@@ -9,7 +9,7 @@ from torch import nn
 from torchvision import transforms
 from torch.nn import functional as F
 
-from mutil_RL.mutil_torch import factory_LinearReLU_Sequential
+from mtorch.util.nnModuleFactory import factory_LinearReLU_Sequential
 
 class BaseQnetwork(nn.Module):
     '''
@@ -17,6 +17,9 @@ class BaseQnetwork(nn.Module):
     '''
     def __init__(self):
         super().__init__()
+    
+    def callback_everyUpdate(self):
+        pass
 
 class Qnetwork(BaseQnetwork):
     def __init__(self, in_chnls: int, hdn_chnls: Tuple[int, ...], out_chnls: int):
